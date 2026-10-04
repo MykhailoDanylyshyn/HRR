@@ -1,0 +1,188 @@
+﻿@model HomeRepairReviews.Models.Feedback
+
+@{
+    ViewBag.Title = "Додати відгук";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-7 col-lg-6">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+
+                <h2 class="text-center mb-4">Додати відгук</h2>
+
+                <form asp-action="Create"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="text-danger mb-3">
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="Master"
+                               class="form-control"
+                               placeholder="Майстер" />
+
+                        <label asp-for="Master">Майстер</label>
+
+                        <span asp-validation-for="Master"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="WorkType"
+                               class="form-control"
+                               placeholder="Вид робіт" />
+
+                        <label asp-for="WorkType">Вид робіт</label>
+
+                        <span asp-validation-for="WorkType"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Text"
+                                  class="form-control"
+                                  placeholder="Ваш відгук"
+                                  style="height: 150px;"></textarea>
+
+                        <label asp-for="Text">Ваш відгук</label>
+
+                        <span asp-validation-for="Text"
+                              class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Фото ремонту
+                        </label>
+
+                        <input type="file"
+                               id="photoInput"
+                               class="form-control"
+                               accept="image/*"
+                               multiple />
+                    </div>
+
+                    <div id="photoPreview"
+                         class="d-flex flex-wrap gap-2 mb-4">
+                    </div>
+
+                    <div class="d-grid gap-2">
+
+                        <button type="submit"
+                                class="btn btn-primary btn-lg">
+                            Додати відгук
+                        </button>
+
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="btn btn-secondary">
+                            Скасувати
+                        </a>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        const photoInput = document.getElementById("photoInput");
+        const photoPreview = document.getElementById("photoPreview");
+        const form = photoInput.closest("form");
+
+        let selectedFiles = [];
+
+        photoInput.addEventListener("change", function() {
+
+            for (const file of photoInput.files) {
+                if (file.type.startsWith("image/")) {
+                    selectedFiles.push(file);
+                }
+            }
+
+            photoInput.value = "";
+
+            showPhotos();
+        });
+
+        function showPhotos() {
+
+            photoPreview.innerHTML = "";
+
+            selectedFiles.forEach((file, index) => {
+
+                const container = document.createElement("div");
+
+                container.style.position = "relative";
+
+                const image = document.createElement("img");
+
+                image.src = URL.createObjectURL(file);
+                image.style.width = "120px";
+                image.style.height = "90px";
+                image.style.objectFit = "cover";
+                image.style.borderRadius = "8px";
+
+                const deleteButton = document.createElement("button");
+
+                deleteButton.type = "button";
+                deleteButton.innerText = "×";
+
+                deleteButton.style.position = "absolute";
+                deleteButton.style.top = "3px";
+                deleteButton.style.right = "3px";
+                deleteButton.style.width = "25px";
+                deleteButton.style.height = "25px";
+                deleteButton.style.padding = "0";
+                deleteButton.style.border = "none";
+                deleteButton.style.borderRadius = "50%";
+                deleteButton.style.background = "white";
+                deleteButton.style.color = "red";
+                deleteButton.style.fontSize = "18px";
+                deleteButton.style.cursor = "pointer";
+
+                deleteButton.addEventListener("click", function() {
+                    selectedFiles.splice(index, 1);
+                    showPhotos();
+                });
+
+                container.appendChild(image);
+                container.appendChild(deleteButton);
+
+                photoPreview.appendChild(container);
+            });
+        }
+
+        form.addEventListener("submit", function() {
+
+            const dataTransfer = new DataTransfer();
+
+            selectedFiles.forEach(function(file) {
+                dataTransfer.items.add(file);
+            });
+
+            const input = document.createElement("input");
+
+            input.type = "file";
+            input.name = "photoFiles";
+            input.multiple = true;
+            input.files = dataTransfer.files;
+
+            form.appendChild(input);
+        });
+    </script>
+}

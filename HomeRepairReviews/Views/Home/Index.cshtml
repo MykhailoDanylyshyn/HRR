@@ -1,0 +1,110 @@
+﻿@model List<HomeRepairReviews.Models.Feedback>
+
+@{
+    ViewBag.Title = "Головна";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="feedback-page">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Відгуки про ремонт</h1>
+
+        @if (Context.Session.GetString("Login") != null)
+        {
+            <a class="btn btn-primary"
+               asp-controller="Feedback"
+               asp-action="Create">
+                Додати відгук
+            </a>
+        }
+    </div>
+
+    <div class="feedback-container">
+
+        @foreach (var feedback in Model)
+        {
+            <div class="feedback-card">
+
+                <div class="feedback-header">
+                    <strong>@feedback.UserName</strong>
+                    <span>@feedback.Date.ToString("dd.MM.yyyy")</span>
+                </div>
+
+                <div class="feedback-info">
+                    <div>
+                        <strong>Майстер:</strong>
+                        @feedback.Master
+                    </div>
+
+                    <div>
+                        <strong>Вид робіт:</strong>
+                        @feedback.WorkType
+                    </div>
+                </div>
+
+                <div class="feedback-text">
+                    @feedback.Text
+                </div>
+
+                @if (feedback.Photos.Any())
+                {
+                    <div class="feedback-photos">
+
+                        @for (int i = 0; i < Math.Min(3, feedback.Photos.Count); i++)
+                        {
+                            var photo = feedback.Photos[i];
+
+                            <div class="feedback-photo-container">
+
+                                <img src="@photo.PhotoPath"
+                                     class="feedback-photo"
+                                     alt="Фото ремонту" />
+
+                                @if (i == 2 && feedback.Photos.Count > 3)
+                                {
+                                    <div class="more-photos">
+                                        Ще @(feedback.Photos.Count - 3) фото
+                                    </div>
+                                }
+
+                            </div>
+                        }
+
+                    </div>
+                }
+
+                <div class="feedback-actions">
+
+                    <a class="btn btn-sm btn-outline-primary"
+                       asp-controller="Feedback"
+                       asp-action="Details"
+                       asp-route-id="@feedback.Id">
+                        Подробиці
+                    </a>
+
+                    @if (Context.Session.GetString("Login") == "admin")
+                    {
+                        <a class="btn btn-sm btn-outline-warning"
+                           asp-controller="Feedback"
+                           asp-action="Edit"
+                           asp-route-id="@feedback.Id">
+                            Редагувати
+                        </a>
+
+                        <a class="btn btn-sm btn-outline-danger"
+                           asp-controller="Feedback"
+                           asp-action="Delete"
+                           asp-route-id="@feedback.Id">
+                            Видалити
+                        </a>
+                    }
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</div>

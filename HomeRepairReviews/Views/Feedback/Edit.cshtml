@@ -1,0 +1,125 @@
+﻿@model HomeRepairReviews.Models.Feedback
+
+@{
+    ViewBag.Title = "Редагування відгуку";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8">
+
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+
+                <h2 class="text-center mb-4">
+                    Редагування відгуку
+                </h2>
+
+                <form asp-action="Edit"
+                      method="post"
+                      enctype="multipart/form-data">
+
+                    <input type="hidden"
+                           name="id"
+                           value="@Model.Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Майстер
+                        </label>
+
+                        <input name="master"
+                               value="@Model.Master"
+                               class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Вид робіт
+                        </label>
+
+                        <input name="workType"
+                               value="@Model.WorkType"
+                               class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Текст відгуку
+                        </label>
+
+                        <textarea name="text"
+                                  class="form-control"
+                                  rows="5">@Model.Text</textarea>
+                    </div>
+
+                    @if (Model.Photos.Any())
+                    {
+                        <label class="form-label">
+                            Поточні фотографії
+                        </label>
+
+                        <div class="d-flex flex-wrap gap-3 mb-4">
+
+                            @foreach (var photo in Model.Photos)
+                            {
+                                <div style="position: relative;">
+
+                                    <img src="@photo.PhotoPath"
+                                         style="width:120px;
+                                    height:90px;
+                                    object-fit:cover;
+                                    border-radius:8px;" />
+
+                                    <label style="display:block;
+                                        margin-top:5px;
+                                        text-align:center;">
+
+                                        <input type="checkbox"
+                                               name="deletePhotoIds"
+                                               value="@photo.Id" />
+
+                                        Видалити
+
+                                    </label>
+
+                                </div>
+                            }
+
+                        </div>
+                    }
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            Додати нові фото
+                        </label>
+
+                        <input type="file"
+                               name="photoFiles"
+                               class="form-control"
+                               accept="image/*"
+                               multiple />
+                    </div>
+
+                    <div class="d-grid gap-2">
+
+                        <button type="submit"
+                                class="btn btn-primary">
+                            Зберегти зміни
+                        </button>
+
+                        <a asp-controller="Home"
+                           asp-action="Index"
+                           class="btn btn-secondary">
+                            Скасувати
+                        </a>
+
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
