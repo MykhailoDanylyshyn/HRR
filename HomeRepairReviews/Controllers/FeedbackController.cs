@@ -1,21 +1,17 @@
 ﻿using HomeRepairReviews.Models;
+using HomeRepairReviews.Repositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace HomeRepairReviews.Controllers;
 
 public class FeedbackController(
-    FeedbackContext context,
-    IWebHostEnvironment appEnvironment) : Controller
+IRepository repository,
+IWebHostEnvironment appEnvironment) : Controller
 {
     // GET: Feedback
     public async Task<IActionResult> Index()
     {
-        var feedbacks = await context.Feedbacks
-            .Include(f => f.Photos)
-            .OrderByDescending(f => f.Date)
-            .ToListAsync();
-
+        var feedbacks = await repository.GetAllAsync();
         return View(feedbacks);
     }
 
@@ -86,9 +82,7 @@ public class FeedbackController(
             }
         }
 
-        context.Feedbacks.Add(feedback);
-
-        await context.SaveChangesAsync();
+        await repository.AddAsync(feedback);
 
         return RedirectToAction("Index", "Home");
     }
@@ -99,18 +93,16 @@ public class FeedbackController(
         if (id == null)
             return NotFound();
 
-        var feedback = await context.Feedbacks
-            .Include(f => f.Photos)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.Id == id);
+        var feedback = await repository.GetByIdAsync(id.Value);
 
         if (feedback == null)
             return NotFound();
 
         return View(feedback);
     }
-// GET: Feedback/Edit/5
-public async Task<IActionResult> Edit(int? id)
+
+    // GET: Feedback/Edit/5
+    public async Task<IActionResult> Edit(int? id)
     {
         if (HttpContext.Session.GetString("Login") != "admin")
             return Forbid();
@@ -118,9 +110,7 @@ public async Task<IActionResult> Edit(int? id)
         if (id == null)
             return NotFound();
 
-        var feedback = await context.Feedbacks
-            .Include(f => f.Photos)
-            .FirstOrDefaultAsync(f => f.Id == id);
+        var feedback = await repository.GetByIdAsync(id.Value);
 
         if (feedback == null)
             return NotFound();
@@ -133,30 +123,32 @@ public async Task<IActionResult> Edit(int? id)
     [ValidateAntiForgeryToken]
     [RequestSizeLimit(100_000_000)]
     public async Task<IActionResult> Edit(
-    int id,
-    string master,
-    string workType,
-    string text,
-    List<int>? deletePhotoIds,
-    List<IFormFile>? photoFiles)
+        int id,
+        string master,
+        string workType,
+        string text,
+        List<int>? deletePhotoIds,
+        List<IFormFile>? photoFiles)
     {
         if (HttpContext.Session.GetString("Login") != "admin")
             return Forbid();
 
-        var feedback = await context.Feedbacks
-            .Include(f => f.Photos)
-            .FirstOrDefaultAsync(f => f.Id == id);
+        var feedback = await repository.GetByIdAsync(id);
 
         if (feedback == null)
             return NotFound();
 
         if (string.IsNullOrWhiteSpace(text))
         {
-            ModelState.AddModelError("text", "Введіть текст відгуку.");
+            ModelState.AddModelError(
+                "text",
+                "Введіть текст відгуку.");
 
             return View(feedback);
         }
 
+        feedback.Master = master;
+        feedback.WorkType = workType;
         feedback.Text = text;
 
         // Видалення вибраних фото
@@ -173,12 +165,14 @@ public async Task<IActionResult> Edit(int? id)
                         appEnvironment.WebRootPath,
                         photo.PhotoPath
                             .TrimStart('/')
-                            .Replace('/', Path.DirectorySeparatorChar));
+                            .Replace(
+                                '/',
+                                Path.DirectorySeparatorChar));
 
                     if (System.IO.File.Exists(filePath))
                         System.IO.File.Delete(filePath);
 
-                    context.FeedbackPhotos.Remove(photo);
+                    feedback.Photos.Remove(photo);
                 }
             }
         }
@@ -219,11 +213,10 @@ public async Task<IActionResult> Edit(int? id)
             }
         }
 
-        await context.SaveChangesAsync();
+        await repository.SaveChangesAsync();
 
         return RedirectToAction("Index", "Home");
     }
-
 
     // GET: Feedback/Delete/5
     public async Task<IActionResult> Delete(int? id)
@@ -234,10 +227,7 @@ public async Task<IActionResult> Edit(int? id)
         if (id == null)
             return NotFound();
 
-        var feedback = await context.Feedbacks
-            .Include(f => f.Photos)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(f => f.Id == id);
+        var feedback = await repository.GetByIdAsync(id.Value);
 
         if (feedback == null)
             return NotFound();
@@ -253,9 +243,7 @@ public async Task<IActionResult> Edit(int? id)
         if (HttpContext.Session.GetString("Login") != "admin")
             return Forbid();
 
-        var feedback = await context.Feedbacks
-            .Include(f => f.Photos)
-            .FirstOrDefaultAsync(f => f.Id == id);
+        var feedback = await repository.GetByIdAsync(id);
 
         if (feedback != null)
         {
@@ -265,15 +253,17 @@ public async Task<IActionResult> Edit(int? id)
                     appEnvironment.WebRootPath,
                     photo.PhotoPath
                         .TrimStart('/')
-                        .Replace('/', Path.DirectorySeparatorChar));
+                        .Replace(
+                            '/',
+                            Path.DirectorySeparatorChar));
 
                 if (System.IO.File.Exists(photoPath))
                     System.IO.File.Delete(photoPath);
             }
 
-            context.Feedbacks.Remove(feedback);
+            repository.Delete(feedback);
 
-            await context.SaveChangesAsync();
+            await repository.SaveChangesAsync();
         }
 
         return RedirectToAction("Index", "Home");

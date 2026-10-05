@@ -1,42 +1,45 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using HomeRepairReviews.Models;
+using HomeRepairReviews.Services;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace HomeRepairReviews.Controllers;
 
-public class AccountController : Controller
+public class AccountController(UserService userService) : Controller
 {
-    private readonly UserContext _context;
-
-    public AccountController(UserContext context)
-    {
-        _context = context;
-    }
-
     public IActionResult Login() => View();
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginModel logon)
     {
-        if (!ModelState.IsValid) return View(logon);
+        if (!ModelState.IsValid)
+            return View(logon);
 
-        var user = await _context.Users.FirstOrDefaultAsync(a => a.Login == logon.Login);
+        var user = await userService.GetByLoginAsync(logon.Login);
 
         if (user == null)
         {
-            ModelState.AddModelError(string.Empty, "Невірний логін або пароль!");
+            ModelState.AddModelError(
+                string.Empty,
+                "Невірний логін або пароль!");
+
             return View(logon);
         }
 
-        byte[] passwordBytes = Encoding.Unicode.GetBytes(user.Salt + logon.Password);
-        string hash = Convert.ToHexString(SHA256.HashData(passwordBytes));
+        byte[] passwordBytes =
+            Encoding.Unicode.GetBytes(user.Salt + logon.Password);
+
+        string hash =
+            Convert.ToHexString(SHA256.HashData(passwordBytes));
 
         if (user.Password != hash)
         {
-            ModelState.AddModelError(string.Empty, "Невірний логін або пароль!");
+            ModelState.AddModelError(
+                string.Empty,
+                "Невірний логін або пароль!");
+
             return View(logon);
         }
 
@@ -53,19 +56,26 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterModel reg)
     {
-        if (!ModelState.IsValid) return View(reg);
+        if (!ModelState.IsValid)
+            return View(reg);
 
-        if (await _context.Users.AnyAsync(u => u.Login == reg.Login))
+        if (await userService.LoginExistsAsync(reg.Login))
         {
-            ModelState.AddModelError(string.Empty, "Користувач з таким логіном вже існує!");
+            ModelState.AddModelError(
+                string.Empty,
+                "Користувач з таким логіном вже існує!");
+
             return View(reg);
         }
 
         byte[] saltBytes = RandomNumberGenerator.GetBytes(16);
         string salt = Convert.ToHexString(saltBytes);
 
-        byte[] passwordBytes = Encoding.Unicode.GetBytes(salt + reg.Password);
-        string hash = Convert.ToHexString(SHA256.HashData(passwordBytes));
+        byte[] passwordBytes =
+            Encoding.Unicode.GetBytes(salt + reg.Password);
+
+        string hash =
+            Convert.ToHexString(SHA256.HashData(passwordBytes));
 
         var user = new User
         {
@@ -76,8 +86,7 @@ public class AccountController : Controller
             Password = hash
         };
 
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        await userService.AddAsync(user);
 
         return RedirectToAction(nameof(Login));
     }

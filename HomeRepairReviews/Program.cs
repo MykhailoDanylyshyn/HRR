@@ -1,4 +1,6 @@
 using HomeRepairReviews.Models;
+using HomeRepairReviews.Repositories;
+using HomeRepairReviews.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +13,9 @@ string? FeedbackDBconnection = builder.Configuration.GetConnectionString("Feedba
 
 builder.Services.AddDbContext<UserContext>(options => options.UseSqlServer(UsersDBconnection));
 builder.Services.AddDbContext<FeedbackContext>(options => options.UseSqlServer(FeedbackDBconnection));
+
+builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IRepository, FeedbackRepository>();
 
 builder.Services.AddControllersWithViews();
 
